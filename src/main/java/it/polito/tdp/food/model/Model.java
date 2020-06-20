@@ -16,6 +16,9 @@ public class Model {
 	private FoodDao dao; 
 	private Graph<String, DefaultWeightedEdge> graph; 
 	
+	private List<String> best; 
+	private int pesoMax; 
+	
 	public Model() {
 		this.dao= new FoodDao(); 
 	}
@@ -58,5 +61,54 @@ public class Model {
 		return lista; 
 		
 	}
+	
+	public List<String> cammino(int passi, String partenza){
+		
+		this.best= new ArrayList<>(); 
+		this.pesoMax=-1; 
+		
+		List<String> cammino= new ArrayList<>(); 
+		int peso=0;  //inizio con un peso nullo 
+		cammino.add(partenza); 
+		
+		ricorsione(cammino, passi, peso); 
+		return best; 
+		
+	}
+
+	private void ricorsione(List<String> cammino, int passi, int peso) {
+		
+		//condizione di terminazione
+		if (cammino.size()-1 ==passi) {
+			//fine, ma e' ottima?
+			if (peso > pesoMax){
+				//allora aggiorno
+				best= new ArrayList<>(cammino); 
+				this.pesoMax=peso;
+				
+			}
+			
+		}
+		
+		//caso generale 
+		String last= cammino.get(cammino.size()-1); 
+		for(String s : Graphs.neighborListOf(this.graph, last)) {
+			if (!cammino.contains(s)) {
+				cammino.add(s); 
+				//aggiorno il peso
+				peso+= (int)this.graph.getEdgeWeight(graph.getEdge(last, s)); 
+				ricorsione(cammino, passi, peso); 
+				cammino.remove(cammino.size()-1); 
+			}
+		}
+		
+	}
+
+	public int getPesoMax() {
+		return pesoMax;
+	}
+
+	
+	
 	
 }
