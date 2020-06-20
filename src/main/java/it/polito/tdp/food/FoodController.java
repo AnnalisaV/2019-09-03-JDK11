@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import it.polito.tdp.food.model.Adiacenza;
 import it.polito.tdp.food.model.Model;
+import it.polito.tdp.food.model.PortionNumber;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -51,81 +51,49 @@ public class FoodController {
 
     @FXML
     void doCammino(ActionEvent event) {
-    	txtResult.clear();
-    	Integer passi;
-    	try {
-    		passi = Integer.parseInt(txtPassi.getText());
-    	} catch(NumberFormatException e) {
-    		txtResult.appendText("Inserire un valore numerico");
-    		return;
-    	}
     	
-    	if(passi <= 0) {
-    		txtResult.appendText("Inserire un valore numerico positivo");
-    		return;
-    	}
-    	
-    	String porzione = boxPorzioni.getValue();
-    	if(porzione == null) {
-    		txtResult.appendText("Selezionare un tipo di porzione");
-    		return;
-    	}
-    	
-    	List<String> percorso = this.model.trovaCammino(passi, porzione);
-    	if(percorso.size() == 0) {
-    		txtResult.appendText("Impossibile trovare un cammino di lunghezza "+passi+" partendo da "+porzione+"\n");
-    	} else {
-	    	txtResult.appendText(String.format("Cammino di lunghezza %d trovato!\nPeso %d\n", passi, this.model.getPesoMax()));
-	    	for(String s : percorso) {
-	    		txtResult.appendText(s+"\n");
-	    	}
-    	}
     }
 
     @FXML
     void doCorrelate(ActionEvent event) {
-    	txtResult.clear();
-    	String porzione = boxPorzioni.getValue();
-    	if(porzione == null) {
-    		txtResult.appendText("Selezionare un tipo di porzione");
+       txtResult.clear();
+    	
+    	if(this.boxPorzioni.getValue()== null) {
+    		txtResult.appendText("ERRORE : Selezionare un tipo di Portion! \n" );
     		return;
     	}
     	
-    	List<Adiacenza> correlate = this.model.getCorrelati(porzione);
-    	txtResult.appendText("Sono state trovate "+correlate.size()+" porzioni correalte a "+porzione+"\n");
-    	for(Adiacenza a : correlate) {
-    		txtResult.appendText(a.toString()+"\n");
+    
+    	txtResult.appendText("Portion connesse : \n");
+    	for (PortionNumber p : this.model.getCorrelate(this.boxPorzioni.getValue())) {
+    		txtResult.appendText(p+"\n");
     	}
+    		
     	
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
-    	Integer calories;
+    	
+    	int calories=-1; 
+    	if (txtCalorie.getText().length()==0) {
+    		txtResult.appendText("ERRORE : Indicare un numero intero di Calories!\n" );
+    		return; 
+    	}
     	try {
-    		calories = Integer.parseInt(txtCalorie.getText());
-    	} catch(NumberFormatException e) {
-    		txtResult.appendText("Inserire un valore numerico");
-    		return;
+    		calories= Integer.parseInt(txtCalorie.getText());
+    	}catch(NumberFormatException nfe) {
+    		txtResult.appendText("ERRORE : Indicare un numero intero di Calories!\n" );
+    		return; 
     	}
+    	model.creaGrafo(calories);
     	
-    	if(calories <= 0) {
-    		txtResult.appendText("Inserire un valore numerico positivo");
-    		return;
-    	}
+    	this.btnCorrelate.setDisable(false); 
+    	this.btnCammino.setDisable(false);
     	
-    	this.model.buildGraph(calories);
-    	txtResult.appendText(String.format("Grafo creato!\nVertici: %d\nArchi: %d\n", 
-    			this.model.getNumVertex(), this.model.getNumEdge()));
-    	
-    	List<String> porzioni = new ArrayList<>(this.model.getVertex());
-    	porzioni.sort(null);
-    	boxPorzioni.getItems().setAll(porzioni);
-    	
-    	btnCorrelate.setDisable(false);
-    	btnCammino.setDisable(false);
-    	
+    	this.boxPorzioni.getItems().remove(this.boxPorzioni.getItems()); 
+    	this.boxPorzioni.getItems().addAll(this.model.getVertex()); 
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -143,7 +111,9 @@ public class FoodController {
     public void setModel(Model model) {
     	this.model = model;
     	
-    	btnCorrelate.setDisable(true);
-    	btnCammino.setDisable(true);
+    	this.btnCorrelate.setDisable(true);
+    	this.btnCammino.setDisable(true);
+    	
+    	
     }
 }

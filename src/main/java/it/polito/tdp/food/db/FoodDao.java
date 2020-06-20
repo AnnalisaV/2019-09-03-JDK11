@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.polito.tdp.food.model.Adiacenza;
 import it.polito.tdp.food.model.Condiment;
+import it.polito.tdp.food.model.CouplePortions;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
 
@@ -111,27 +111,58 @@ public class FoodDao {
 
 	}
 	
-	
-	public List<String> getAllPortionsType(int calories) {
-		String sql = "SELECT DISTINCT portion_display_name AS name FROM `portion` WHERE calories < ?";
-		List<String> result = new ArrayList<String>();
+	/**
+	 * Lista di portion_name di cui ci sia almeno una volta una caloria < al parametro passato
+	 * @param calories
+	 * @return
+	 */
+	public List<String> portionName(int calories){
+		String sql="SELECT DISTINCT portion_display_name as pname " + 
+				"FROM `portion` " + 
+				"WHERE calories<? "; 
 		
+		List<String> lista= new ArrayList<>(); 
 		try {
 			Connection conn = DBConnect.getConnection() ;
-			PreparedStatement st = conn.prepareStatement(sql) ;
+            PreparedStatement st = conn.prepareStatement(sql) ;
 			st.setInt(1, calories);
 			ResultSet res = st.executeQuery() ;
 			
 			while(res.next()) {
-				try {
-					result.add(res.getString("name").toLowerCase());
-				} catch (Throwable t) {
-					t.printStackTrace();
-				}
+				lista.add(new String(res.getString("pname"))); 
 			}
 			
 			conn.close();
-			return result ;
+			return lista ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+		
+	}
+	
+	public List<CouplePortions> getCouples(){
+		String sql="SELECT p1.portion_display_name, p2.portion_display_name, COUNT(DISTINCT p1.food_code) AS peso " + 
+				"FROM `portion` p1, `portion` p2 " + 
+				"WHERE p1.food_code=p2.food_code AND " + 
+				"p1.portion_display_name != p2.portion_display_name " + 
+				"GROUP BY p1.portion_display_name, p2.portion_display_name"; 
+		List<CouplePortions> lista= new ArrayList<>(); 
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+            PreparedStatement st = conn.prepareStatement(sql) ;
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				lista.add(new CouplePortions(res.getString("p1.portion_display_name"), 
+						res.getString("p2.portion_display_name"), res.getInt("peso"))); 
+			}
+			
+			conn.close();
+			return lista ;
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -139,39 +170,4 @@ public class FoodDao {
 		}
 		
 	}
-	
-	
-	public List<Adiacenza> getAdiacenze(int calories) {
-		String sql = "SELECT p1.portion_display_name AS type1, p2.portion_display_name AS type2, COUNT(DISTINCT (p1.food_code)) AS peso " + 
-				"FROM `portion` AS p1, `portion` AS p2 " + 
-				"WHERE p1.portion_display_name != p2.portion_display_name AND " +
-				"p1.calories < ? AND p2.calories < ? AND p1.food_code = p2.food_code " + 
-				"GROUP BY p1.portion_display_name, p2.portion_display_name";		
-		List<Adiacenza> result = new ArrayList<>();
-		
-		try {
-			Connection conn = DBConnect.getConnection() ;
-			PreparedStatement st = conn.prepareStatement(sql) ;
-			st.setInt(1, calories);
-			st.setInt(2, calories);
-			ResultSet res = st.executeQuery() ;
-			
-			while(res.next()) {
-				try {
-					result.add(new Adiacenza(res.getString("type1").toLowerCase(), res.getString("type2").toLowerCase(), res.getInt("peso")));
-				} catch (Throwable t) {
-					t.printStackTrace();
-				}
-			}
-			
-			conn.close();
-			return result ;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null ;
-		}
-	}
-	
-
 }
